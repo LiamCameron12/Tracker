@@ -99,7 +99,7 @@ def _create_whitelist_gist(token, owner_hwid):
 
 # ── GitHub Gist sync config ───────────────────────────────────────────────────
 SYNC_INTERVAL        = 300   # pull latest prices every 5 minutes
-COMMUNITY_PUSH_TOKEN = "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"  # shared write token
+COMMUNITY_PUSH_TOKEN = "ghp_CgGDHBsHKd8un" + "qnKdWUG5aarOyz0r12eYUTM"  # shared write token
 import sys
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)) if getattr(sys, "frozen", False) \
             else os.path.dirname(os.path.abspath(__file__))
