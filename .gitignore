@@ -1,0 +1,18 @@
+# Build output
+build/
+dist/
+*.spec
+
+# Compiled executables
+*.exe
+
+# Backups
+*_BACKUP*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Local data files
+*.json
