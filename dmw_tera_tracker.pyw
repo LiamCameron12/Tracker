@@ -100,7 +100,7 @@ def _create_whitelist_gist(token, owner_hwid):
 # ── GitHub Gist sync config ───────────────────────────────────────────────────
 SYNC_INTERVAL = 300   # pull latest prices every 5 minutes
 import sys
-_BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) \
+_BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)) if getattr(sys, "frozen", False) \
             else os.path.dirname(os.path.abspath(__file__))
 _IMG_DIR  = os.path.join(_BASE_DIR, "images")
 
