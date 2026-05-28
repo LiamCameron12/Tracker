@@ -98,7 +98,8 @@ def _create_whitelist_gist(token, owner_hwid):
         return json.loads(r.read().decode())["id"]
 
 # ── GitHub Gist sync config ───────────────────────────────────────────────────
-SYNC_INTERVAL = 300   # pull latest prices every 5 minutes
+SYNC_INTERVAL        = 300   # pull latest prices every 5 minutes
+COMMUNITY_PUSH_TOKEN = "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"  # shared write token
 import sys
 _BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)) if getattr(sys, "frozen", False) \
             else os.path.dirname(os.path.abspath(__file__))
@@ -2241,19 +2242,38 @@ class DMWTeraTracker:
             self.root.after(0, self._on_sync_update)
 
     def _sync_push(self):
-        cfg = self._load_sync_config()
-        if not cfg.get("token"):
-            return
         threading.Thread(target=self._do_push, daemon=True).start()
 
     def _do_push(self):
         cfg     = self._load_sync_config()
-        token   = cfg.get("token", "")
-        gist_id = cfg.get("gist_id", "")
-        if not token:
-            return
+        # owner uses their own token+gist; everyone else uses community token→shared gist
+        token   = cfg.get("token", "") or COMMUNITY_PUSH_TOKEN
+        gist_id = cfg.get("gist_id", "") or PRICES_GIST_ID
 
-        content = json.dumps({"price_history": self.price_hist}, indent=2)
+        # merge: pull remote first, keep newest entry per item
+        remote_hist = {}
+        try:
+            url     = f"https://api.github.com/gists/{gist_id}"
+            headers_r = {"Accept": "application/vnd.github+json",
+                         "Authorization": f"Bearer {token}"}
+            req = urllib.request.Request(url, headers=headers_r)
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data    = json.loads(r.read().decode())
+                content = data["files"]["dmw_prices.json"]["content"]
+                remote_hist = json.loads(content).get("price_history", {})
+        except Exception:
+            pass
+
+        merged = dict(remote_hist)
+        for name, entries in self.price_hist.items():
+            if not entries:
+                continue
+            local_latest  = entries[-1]
+            remote_latest = merged.get(name, [{}])[-1]
+            if local_latest.get("timestamp", "") > remote_latest.get("timestamp", ""):
+                merged.setdefault(name, []).append(local_latest)
+
+        content = json.dumps({"price_history": merged}, indent=2)
         payload = json.dumps({
             "description": "DMW Tera Tracker — shared prices",
             "public":      True,
@@ -2265,24 +2285,13 @@ class DMWTeraTracker:
             "Content-Type":  "application/json",
         }
         try:
-            if not gist_id:
-                req = urllib.request.Request(
-                    "https://api.github.com/gists",
-                    data=payload, headers=headers, method="POST")
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    resp    = json.loads(r.read().decode())
-                    gist_id = resp["id"]
-                cfg["gist_id"] = gist_id
-                self._save_sync_config(cfg)
-                self.root.after(0, lambda: self._set_sync_status("✓ Synced — gist created", C["green"]))
-            else:
-                req = urllib.request.Request(
-                    f"https://api.github.com/gists/{gist_id}",
-                    data=payload, headers=headers, method="PATCH")
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    pass
-                ts = datetime.now().strftime("%H:%M")
-                self.root.after(0, lambda: self._set_sync_status(f"✓ Synced  {ts}", C["green"]))
+            req = urllib.request.Request(
+                f"https://api.github.com/gists/{gist_id}",
+                data=payload, headers=headers, method="PATCH")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                pass
+            ts = datetime.now().strftime("%H:%M")
+            self.root.after(0, lambda: self._set_sync_status(f"✓ Synced  {ts}", C["green"]))
         except Exception:
             self.root.after(0, lambda: self._set_sync_status("Sync failed", C["red"]))
 
