@@ -1606,7 +1606,7 @@ class DMWTeraTracker:
     def _time_input(self, parent, key, bg, on_change=None):
         frame = tk.Frame(parent, bg=bg)
 
-        tk.Label(frame, text="Run Time",
+        tk.Label(frame, text="Run Time  ✎ click to edit",
                  font=("Segoe UI", 7, "bold"),
                  bg=bg, fg=C["text_muted"]).pack(anchor="w")
 
@@ -1618,10 +1618,12 @@ class DMWTeraTracker:
                          font=("Consolas", 13, "bold"),
                          bg=C["card2"], fg=C["cyan"],
                          insertbackground=C["cyan"],
+                         highlightbackground=C["border"],
+                         highlightthickness=1,
                          relief=tk.FLAT, width=6,
                          justify="center")
         entry.pack(side=tk.LEFT)
-        tk.Label(entry_row, text=" M:SS",
+        tk.Label(entry_row, text=" M:SS  then Enter",
                  font=("Segoe UI", 8),
                  bg=bg, fg=C["text_muted"]).pack(side=tk.LEFT)
 
@@ -1630,14 +1632,21 @@ class DMWTeraTracker:
             self.set_secs(key, secs)
             var.set(self.secs_to_minsec(secs) if secs else "")
             rph = self.runs_hr(key)
-            rph_text = f"{rph:.1f} runs/hr" if rph else "— set time above"
+            rph_text = f"{rph:.1f} runs/hr" if rph else "— type time above, press Enter"
             rph_lbl.config(text=rph_text,
                            fg=C["text"] if rph else C["text_muted"])
             if on_change:
                 on_change()
 
-        entry.bind("<Return>",    _commit)
-        entry.bind("<FocusOut>",  _commit)
+        def _focus_in(e):
+            entry.config(highlightbackground=C["cyan"], highlightthickness=1)
+        def _focus_out(e):
+            entry.config(highlightbackground=C["border"], highlightthickness=1)
+            _commit()
+
+        entry.bind("<Return>",      _commit)
+        entry.bind("<FocusIn>",     _focus_in)
+        entry.bind("<FocusOut>",    _focus_out)
 
         rph = self.runs_hr(key)
         rph_lbl = tk.Label(frame,
