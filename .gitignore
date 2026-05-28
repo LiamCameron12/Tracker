@@ -16,3 +16,9 @@ __pycache__/
 
 # Local data files
 *.json
+
+# Overlay tools (separate project)
+dmw_overlay.pyw
+dmw_pied_mech_overlay.pyw
+dmw_apo_overlay.pyw
+DMW Mechs/
