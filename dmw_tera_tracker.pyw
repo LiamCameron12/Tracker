@@ -369,7 +369,8 @@ class DMWTeraTracker:
 
     def log_price(self, name, price):
         self.price_hist.setdefault(name, []).append(
-            {"price": price, "timestamp": datetime.now().isoformat()})
+            {"price": price, "timestamp": datetime.now().isoformat(),
+             "hwid": get_hwid()})
         self.save_data()
 
     # ── Image loading ─────────────────────────────────────────────────────────
@@ -1549,12 +1550,16 @@ class DMWTeraTracker:
                          font=("Segoe UI", 9),
                          bg=C["bg"], fg=C["text_muted"], pady=9).pack(anchor="w")
             else:
+                my_hwid = get_hwid()
                 for entry in reversed(history[-12:]):
-                    ts    = entry.get("timestamp", "")[:16].replace("T", "   ")
-                    price = entry.get("price", 0)
-                    row   = tk.Frame(sec, bg=C["bg"],
-                                     highlightbackground=C["border"],
-                                     highlightthickness=1)
+                    ts      = entry.get("timestamp", "")[:16].replace("T", "   ")
+                    price   = entry.get("price", 0)
+                    scanner = entry.get("hwid", "")
+                    is_me   = (scanner == my_hwid) or (scanner == "")
+
+                    row  = tk.Frame(sec, bg=C["bg"],
+                                    highlightbackground=C["border"],
+                                    highlightthickness=1)
                     row.pack(fill=tk.X)
                     r_in = tk.Frame(row, bg=C["bg"], pady=7, padx=22)
                     r_in.pack(fill=tk.X)
@@ -1562,6 +1567,11 @@ class DMWTeraTracker:
                     tk.Label(r_in, text=ts,
                              font=("Consolas", 9),
                              bg=C["bg"], fg=C["text_muted"]).pack(side=tk.LEFT)
+
+                    if not is_me:
+                        tk.Label(r_in, text="scan from member",
+                                 font=("Segoe UI", 8),
+                                 bg=C["bg"], fg=C["text_dim"]).pack(side=tk.LEFT, padx=(8, 0))
 
                     tk.Label(r_in,
                              text=self.fmt(price),
