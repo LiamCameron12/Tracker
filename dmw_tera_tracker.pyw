@@ -190,8 +190,13 @@ DUNGEONS = [
 ]
 
 PRICE_ITEMS = [
-    {"name": "Yggdrasil Core",      "command": ".storeitem Yggdrasil Core"},
-    {"name": "Yggdrasil's Records", "command": ".storeitem Yggdrasil's Records"},
+    {"name": "Yggdrasil Core",                       "command": ".storeitem Yggdrasil Core"},
+    {"name": "Yggdrasil's Records",                  "command": ".storeitem Yggdrasil's Records"},
+    {"name": "Mastemon Seal",                        "command": ".storeitem Mastemon Seal"},
+    {"name": "Omegamon X Seal",                      "command": ".storeitem Omegamon X Seal"},
+    {"name": "Chaosmon Seal",                        "command": ".storeitem Chaosmon Seal"},
+    {"name": "ImperialDramon Fighter Mode Seal",     "command": ".storeitem ImperialDramon Fighter Mode Seal"},
+    {"name": "ShoutmonX2 Seal",                      "command": ".storeitem ShoutmonX2 Seal"},
     {"name": "Marine Dragon Core",  "command": ".storeitem Marine Dragon Core"},
     {"name": "Wooden Puppet Core",  "command": ".storeitem Wooden Puppet Core"},
     {"name": "Metallic Beast Core",          "command": ".storeitem Metallic Beast Core"},
