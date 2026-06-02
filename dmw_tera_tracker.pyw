@@ -190,13 +190,18 @@ DUNGEONS = [
 ]
 
 PRICE_ITEMS = [
-    {"name": "Yggdrasil Core",                       "command": ".storeitem Yggdrasil Core"},
-    {"name": "Yggdrasil's Records",                  "command": ".storeitem Yggdrasil's Records"},
-    {"name": "Mastemon Seal",                        "command": ".storeitem Mastemon Seal"},
-    {"name": "Omegamon X Seal",                      "command": ".storeitem Omegamon X Seal"},
-    {"name": "Chaosmon Seal",                        "command": ".storeitem Chaosmon Seal"},
-    {"name": "ImperialDramon Fighter Mode Seal",     "command": ".storeitem ImperialDramon Fighter Mode Seal"},
-    {"name": "ShoutmonX2 Seal",                      "command": ".storeitem ShoutmonX2 Seal"},
+    {"name": "Yggdrasil Core",      "command": ".storeitem Yggdrasil Core"},
+    {"name": "Yggdrasil's Records", "command": ".storeitem Yggdrasil's Records"},
+    # ── RBH Seals (shown as collapsible group in scanner) ────────────────────
+    {"name": "Alphamon Ouryuken Seal",               "command": ".storeitem Alphamon Ouryuken Seal",              "group": "rbh_seals"},
+    {"name": "Alphamon Ouryuken (Awaken) Seal",      "command": ".storeitem Alphamon Ouryuken (Awaken) Seal",     "group": "rbh_seals"},
+    {"name": "Alphamon Ouryuken X Seal",             "command": ".storeitem Alphamon Ouryuken X Seal",            "group": "rbh_seals"},
+    {"name": "Mastemon Seal",                        "command": ".storeitem Mastemon Seal",                       "group": "rbh_seals"},
+    {"name": "Omegamon X Seal",                      "command": ".storeitem Omegamon X Seal",                     "group": "rbh_seals"},
+    {"name": "Chaosmon Seal",                        "command": ".storeitem Chaosmon Seal",                       "group": "rbh_seals"},
+    {"name": "ImperialDramon Fighter Mode Seal",     "command": ".storeitem ImperialDramon Fighter Mode Seal",    "group": "rbh_seals"},
+    {"name": "ShoutmonX2 Seal",                      "command": ".storeitem ShoutmonX2 Seal",                     "group": "rbh_seals"},
+    # ─────────────────────────────────────────────────────────────────────────
     {"name": "Marine Dragon Core",  "command": ".storeitem Marine Dragon Core"},
     {"name": "Wooden Puppet Core",  "command": ".storeitem Wooden Puppet Core"},
     {"name": "Metallic Beast Core",          "command": ".storeitem Metallic Beast Core"},
@@ -688,8 +693,48 @@ class DMWTeraTracker:
                  bg=C["bg"], fg=C["text_muted"], pady=8).pack(anchor="w")
 
         self.item_rows = {}
+        _seal_cont    = [None]
+        _seal_open    = [False]
+
         for item in PRICE_ITEMS:
-            self._build_queue_row(p, item)
+            if item.get("group") == "rbh_seals":
+                if _seal_cont[0] is None:
+                    n = sum(1 for x in PRICE_ITEMS if x.get("group") == "rbh_seals")
+                    hdr = tk.Frame(p, bg=C["bg2"],
+                                   highlightbackground=C["border"],
+                                   highlightthickness=1, cursor="hand2")
+                    hdr.pack(fill=tk.X)
+                    h_in = tk.Frame(hdr, bg=C["bg2"], pady=9, padx=26)
+                    h_in.pack(fill=tk.X)
+                    arr = tk.Label(h_in, text="▶",
+                                   font=("Segoe UI", 8),
+                                   bg=C["bg2"], fg=C["text_dim"])
+                    arr.pack(side=tk.LEFT, padx=(0, 8))
+                    tk.Label(h_in, text="RBH  SEALS",
+                             font=("Segoe UI", 9, "bold"),
+                             bg=C["bg2"], fg=C["purple"]).pack(side=tk.LEFT)
+                    tk.Label(h_in, text=f"   {n} items",
+                             font=("Segoe UI", 8),
+                             bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
+
+                    cont = tk.Frame(p, bg=C["bg"])
+                    _seal_cont[0] = cont
+
+                    def _toggle(e, c=cont, a=arr, flag=_seal_open):
+                        flag[0] = not flag[0]
+                        if flag[0]:
+                            c.pack(fill=tk.X)
+                            a.config(text="▼")
+                        else:
+                            c.pack_forget()
+                            a.config(text="▶")
+
+                    for w in (hdr, h_in) + tuple(h_in.winfo_children()):
+                        w.bind("<Button-1>", _toggle)
+
+                self._build_queue_row(_seal_cont[0], item)
+            else:
+                self._build_queue_row(p, item)
 
         self._refresh_scan_ui()
 
