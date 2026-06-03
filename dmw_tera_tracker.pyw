@@ -712,7 +712,7 @@ class DMWTeraTracker:
                     arr.pack(side=tk.LEFT, padx=(0, 8))
                     tk.Label(h_in, text="RBH  SEALS",
                              font=("Segoe UI", 9, "bold"),
-                             bg=C["bg2"], fg=C["purple"]).pack(side=tk.LEFT)
+                             bg=C["bg2"], fg=C["cyan"]).pack(side=tk.LEFT)
                     tk.Label(h_in, text=f"   {n} items",
                              font=("Segoe UI", 8),
                              bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
