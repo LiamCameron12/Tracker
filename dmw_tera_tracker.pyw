@@ -1600,119 +1600,66 @@ class DMWTeraTracker:
 
         my_hwid = get_hwid()
 
-        for dg in DUNGEONS:
-            # collect all price items that belong to this dungeon
-            drop_names = {d["name"] for d in dg["drops"]}
-            if dg["id"] == "rbh":
-                drop_names |= {it["name"] for it in PRICE_ITEMS
-                               if it.get("group") == "rbh_seals"}
-            dg_items = [it for it in PRICE_ITEMS if it["name"] in drop_names]
-            if not dg_items:
-                continue
+        for item in PRICE_ITEMS:
+            name    = item["name"]
+            history = self.price_hist.get(name, [])
+            latest  = self.get_price(name)
 
-            col   = dg["color"]
-            open_ = [False]
+            sec = tk.Frame(sf, bg=C["bg"])
+            sec.pack(fill=tk.X, pady=(10, 0), padx=18)
 
-            outer = tk.Frame(sf, bg=C["bg"])
-            outer.pack(fill=tk.X, pady=(10, 0), padx=18)
+            hdr_f = tk.Frame(sec, bg=C["card"],
+                             highlightbackground=C["border_hi"],
+                             highlightthickness=1)
+            hdr_f.pack(fill=tk.X)
+            tk.Frame(hdr_f, bg=C["cyan"], width=4).pack(side=tk.LEFT, fill=tk.Y)
 
-            # ── accordion header ──────────────────────────────────────────────
-            hdr = tk.Frame(outer, bg=C["bg2"],
-                           highlightbackground=C["border"],
-                           highlightthickness=1, cursor="hand2")
-            hdr.pack(fill=tk.X)
-            h_in = tk.Frame(hdr, bg=C["bg2"], pady=10, padx=14)
-            h_in.pack(fill=tk.X)
-            tk.Frame(h_in, bg=col, width=4).pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-            arr = tk.Label(h_in, text="▶", font=("Segoe UI", 8),
-                           bg=C["bg2"], fg=C["text_dim"])
-            arr.pack(side=tk.LEFT, padx=(0, 8))
-            tk.Label(h_in, text=dg["short"],
-                     font=("Segoe UI", 9, "bold"),
-                     bg=C["bg2"], fg=col).pack(side=tk.LEFT)
-            tk.Label(h_in, text=f"  {dg['name']}",
-                     font=("Segoe UI", 8),
-                     bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
-            tk.Label(h_in, text=f"  ·  {len(dg_items)} items",
-                     font=("Segoe UI", 8),
-                     bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
+            h_in = tk.Frame(hdr_f, bg=C["card"], pady=12, padx=16)
+            h_in.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-            content = tk.Frame(outer, bg=C["bg"])
+            tk.Label(h_in, text=name,
+                     font=("Segoe UI", 13, "bold"),
+                     bg=C["card"], fg=C["text"]).pack(side=tk.LEFT)
+            tk.Label(h_in,
+                     text=self.fmt(latest) if latest else "No data",
+                     font=("Segoe UI", 13, "bold"),
+                     bg=C["card"],
+                     fg=C["gold"] if latest else C["text_muted"]).pack(side=tk.RIGHT)
 
-            def _toggle(e, c=content, a=arr, flag=open_):
-                flag[0] = not flag[0]
-                if flag[0]:
-                    c.pack(fill=tk.X)
-                    a.config(text="▼")
-                else:
-                    c.pack_forget()
-                    a.config(text="▶")
+            if not history:
+                row = tk.Frame(sec, bg=C["bg"],
+                               highlightbackground=C["border"], highlightthickness=1)
+                row.pack(fill=tk.X)
+                tk.Label(row,
+                         text="   No entries yet — run the Price Scanner",
+                         font=("Segoe UI", 9),
+                         bg=C["bg"], fg=C["text_muted"], pady=9).pack(anchor="w")
+            else:
+                for entry in reversed(history[-12:]):
+                    ts      = entry.get("timestamp", "")[:16].replace("T", "   ")
+                    price   = entry.get("price", 0)
+                    scanner = entry.get("hwid", "")
+                    is_me   = (scanner == my_hwid) or (scanner == "")
 
-            for w in (hdr, h_in) + tuple(h_in.winfo_children()):
-                w.bind("<Button-1>", _toggle)
-
-            # ── item cards inside the accordion ───────────────────────────────
-            for item in dg_items:
-                name    = item["name"]
-                history = self.price_hist.get(name, [])
-                latest  = self.get_price(name)
-
-                sec = tk.Frame(content, bg=C["bg"])
-                sec.pack(fill=tk.X, pady=(4, 0))
-
-                hdr_f = tk.Frame(sec, bg=C["card"],
-                                 highlightbackground=C["border_hi"],
-                                 highlightthickness=1)
-                hdr_f.pack(fill=tk.X)
-                tk.Frame(hdr_f, bg=col, width=4).pack(side=tk.LEFT, fill=tk.Y)
-
-                h_in2 = tk.Frame(hdr_f, bg=C["card"], pady=12, padx=16)
-                h_in2.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-                tk.Label(h_in2, text=name,
-                         font=("Segoe UI", 13, "bold"),
-                         bg=C["card"], fg=C["text"]).pack(side=tk.LEFT)
-                tk.Label(h_in2,
-                         text=self.fmt(latest) if latest else "No data",
-                         font=("Segoe UI", 13, "bold"),
-                         bg=C["card"],
-                         fg=C["gold"] if latest else C["text_muted"]).pack(side=tk.RIGHT)
-
-                if not history:
-                    row = tk.Frame(sec, bg=C["bg"],
-                                   highlightbackground=C["border"],
-                                   highlightthickness=1)
+                    row  = tk.Frame(sec, bg=C["bg"],
+                                    highlightbackground=C["border"],
+                                    highlightthickness=1)
                     row.pack(fill=tk.X)
-                    tk.Label(row,
-                             text="   No entries yet — run the Price Scanner",
-                             font=("Segoe UI", 9),
-                             bg=C["bg"], fg=C["text_muted"], pady=9).pack(anchor="w")
-                else:
-                    for entry in reversed(history[-12:]):
-                        ts      = entry.get("timestamp", "")[:16].replace("T", "   ")
-                        price   = entry.get("price", 0)
-                        scanner = entry.get("hwid", "")
-                        is_me   = (scanner == my_hwid) or (scanner == "")
+                    r_in = tk.Frame(row, bg=C["bg"], pady=7, padx=22)
+                    r_in.pack(fill=tk.X)
 
-                        row  = tk.Frame(sec, bg=C["bg"],
-                                        highlightbackground=C["border"],
-                                        highlightthickness=1)
-                        row.pack(fill=tk.X)
-                        r_in = tk.Frame(row, bg=C["bg"], pady=7, padx=22)
-                        r_in.pack(fill=tk.X)
+                    tk.Label(r_in, text=ts,
+                             font=("Consolas", 9),
+                             bg=C["bg"], fg=C["text_muted"]).pack(side=tk.LEFT)
 
-                        tk.Label(r_in, text=ts,
-                                 font=("Consolas", 9),
-                                 bg=C["bg"], fg=C["text_muted"]).pack(side=tk.LEFT)
+                    if not is_me:
+                        tk.Label(r_in, text="scan from member",
+                                 font=("Segoe UI", 8),
+                                 bg=C["bg"], fg=C["text_dim"]).pack(side=tk.LEFT, padx=(8, 0))
 
-                        if not is_me:
-                            tk.Label(r_in, text="scan from member",
-                                     font=("Segoe UI", 8),
-                                     bg=C["bg"], fg=C["text_dim"]).pack(side=tk.LEFT, padx=(8, 0))
-
-                        tk.Label(r_in, text=self.fmt(price),
-                                 font=("Segoe UI", 11, "bold"),
-                                 bg=C["bg"], fg=C["gold"]).pack(side=tk.RIGHT)
+                    tk.Label(r_in, text=self.fmt(price),
+                             font=("Segoe UI", 11, "bold"),
+                             bg=C["bg"], fg=C["gold"]).pack(side=tk.RIGHT)
 
         tk.Frame(sf, height=16, bg=C["bg"]).pack()
 
