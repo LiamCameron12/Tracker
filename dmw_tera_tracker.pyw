@@ -730,14 +730,14 @@ class DMWTeraTracker:
 
         self._refresh_scan_ui()
 
-    def _build_accordion(self, parent, group_key, label):
+    def _build_accordion(self, parent, group_key, label, pady=0, padx=0):
         """Create a collapsible accordion row. Returns a [frame] list."""
         n     = sum(1 for x in PRICE_ITEMS if x.get("group") == group_key)
         open_ = [False]
 
         # outer wrapper keeps header + content together in pack order
         outer = tk.Frame(parent, bg=C["bg"])
-        outer.pack(fill=tk.X)
+        outer.pack(fill=tk.X, pady=pady, padx=padx)
 
         hdr   = tk.Frame(outer, bg=C["bg2"],
                          highlightbackground=C["border"],
@@ -1598,13 +1598,33 @@ class DMWTeraTracker:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
+        _hist_seal_cont = [None]
+        _hist_box_cont  = [None]
+
         for item in PRICE_ITEMS:
+            grp = item.get("group")
+            if grp == "rbh_seals":
+                if _hist_seal_cont[0] is None:
+                    _hist_seal_cont = self._build_accordion(
+                        sf, "rbh_seals", "RBH  SEALS", pady=(10, 0), padx=18)
+                hist_parent = _hist_seal_cont[0]
+                sec_pady, sec_padx = (4, 0), 0
+            elif grp == "spirit_boxes":
+                if _hist_box_cont[0] is None:
+                    _hist_box_cont = self._build_accordion(
+                        sf, "spirit_boxes", "SPIRIT  BOXES", pady=(10, 0), padx=18)
+                hist_parent = _hist_box_cont[0]
+                sec_pady, sec_padx = (4, 0), 0
+            else:
+                hist_parent = sf
+                sec_pady, sec_padx = (10, 0), 18
+
             name    = item["name"]
             history = self.price_hist.get(name, [])
             latest  = self.get_price(name)
 
-            sec = tk.Frame(sf, bg=C["bg"])
-            sec.pack(fill=tk.X, pady=(10, 0), padx=18)
+            sec = tk.Frame(hist_parent, bg=C["bg"])
+            sec.pack(fill=tk.X, pady=sec_pady, padx=sec_padx)
 
             hdr_f = tk.Frame(sec, bg=C["card"],
                              highlightbackground=C["border_hi"],
