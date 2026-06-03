@@ -5,7 +5,7 @@ Original dark-sci-fi design with boss portraits and dungeon cards.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import json, os, threading, time, re, urllib.request, urllib.error, hashlib, winreg
+import json, os, threading, time, re, urllib.request, urllib.error, hashlib, winreg, uuid
 from datetime import datetime
 from io import BytesIO
 
@@ -247,6 +247,15 @@ C = {
 }
 
 
+def _make_custom_item(name="New Item", qty=1, price_t=0.0):
+    return {
+        "id":         str(uuid.uuid4())[:8],
+        "name":       name,
+        "qty":        qty,
+        "price_t":    price_t,
+        "updated_ts": datetime.now().isoformat(),
+    }
+
 # ══════════════════════════════════════════════════════════════════════════════
 class DMWTeraTracker:
 
@@ -268,7 +277,8 @@ class DMWTeraTracker:
         self.scan_enabled = {it["name"]: True for it in PRICE_ITEMS}
         self.inv_qty      = {it["name"]: 0 for it in PRICE_ITEMS}
         self.account_t    = 0.0
-        self.custom_inv   = []
+        self.custom_inv        = []
+        self.deleted_custom_ids = []
         self.scan_active  = False
         self.scan_idx     = 0
         self.clip_prev    = ""
@@ -303,7 +313,14 @@ class DMWTeraTracker:
                 saved_inv = d.get("inv_qty", {})
                 self.inv_qty.update(saved_inv)
                 self.account_t  = float(d.get("account_t", 0.0))
-                self.custom_inv = d.get("custom_inv", [])
+                self.custom_inv         = d.get("custom_inv", [])
+                self.deleted_custom_ids = d.get("deleted_custom_ids", [])
+                # backfill IDs for items saved before sync was added
+                for ci in self.custom_inv:
+                    if "id" not in ci:
+                        ci["id"] = str(uuid.uuid4())[:8]
+                    if "updated_ts" not in ci:
+                        ci["updated_ts"] = datetime.now().isoformat()
             except Exception:
                 pass
 
@@ -316,7 +333,8 @@ class DMWTeraTracker:
                     "scan_enabled":  self.scan_enabled,
                     "inv_qty":       self.inv_qty,
                 "account_t":     self.account_t,
-                "custom_inv":    self.custom_inv,
+                "custom_inv":           self.custom_inv,
+                "deleted_custom_ids":   self.deleted_custom_ids,
                 }, f, indent=2)
         except Exception as e:
             messagebox.showerror("Save Error", str(e))
@@ -2133,17 +2151,22 @@ class DMWTeraTracker:
             self._grand_total_lbl.config(text=self._grand_total_str())
 
     def _add_custom_item(self):
-        self.custom_inv.append({"name": "New Item", "qty": 1, "price_t": 0.0})
+        self.custom_inv.append(_make_custom_item())
         self.save_data()
         self._refresh_custom_rows()
         self._refresh_inv_totals()
+        self._sync_push()
 
     def _delete_custom_item(self, idx):
         if 0 <= idx < len(self.custom_inv):
+            cid = self.custom_inv[idx].get("id")
+            if cid and cid not in self.deleted_custom_ids:
+                self.deleted_custom_ids.append(cid)
             self.custom_inv.pop(idx)
             self.save_data()
             self._refresh_custom_rows()
             self._refresh_inv_totals()
+            self._sync_push()
 
     def _refresh_custom_rows(self):
         if not hasattr(self, "_custom_body"):
@@ -2225,10 +2248,12 @@ class DMWTeraTracker:
                 pt = 0.0
             qv.set(q)
             pv.set(f"{pt:.2f}" if pt else "")
-            self.custom_inv[i]["name"]    = nv.get().strip() or "Custom Item"
-            self.custom_inv[i]["qty"]     = q
-            self.custom_inv[i]["price_t"] = pt
+            self.custom_inv[i]["name"]       = nv.get().strip() or "Custom Item"
+            self.custom_inv[i]["qty"]        = q
+            self.custom_inv[i]["price_t"]    = pt
+            self.custom_inv[i]["updated_ts"] = datetime.now().isoformat()
             self.save_data()
+            self._sync_push()
             rv = int(pt * 1_000_000) * q
             vl.config(text=self.fmt(rv) if rv else "—",
                       fg=C["gold"] if rv else C["text_muted"])
@@ -2306,6 +2331,30 @@ class DMWTeraTracker:
                 self.price_hist.setdefault(name, []).append(remote_latest)
                 updated = True
 
+        # merge remote custom items
+        remote_custom = remote.get("custom_items", [])
+        local_by_id   = {ci.get("id"): ci for ci in self.custom_inv if ci.get("id")}
+        for rc in remote_custom:
+            cid = rc.get("id")
+            if not cid or cid in self.deleted_custom_ids:
+                continue
+            if cid not in local_by_id:
+                # new item from remote — add with qty 0
+                self.custom_inv.append({
+                    "id":         cid,
+                    "name":       rc.get("name", "Custom Item"),
+                    "qty":        0,
+                    "price_t":    rc.get("price_t", 0.0),
+                    "updated_ts": rc.get("updated_ts", ""),
+                })
+                updated = True
+            elif rc.get("updated_ts", "") > local_by_id[cid].get("updated_ts", ""):
+                # remote is newer — update name and price (keep local qty)
+                local_by_id[cid]["name"]       = rc.get("name", local_by_id[cid]["name"])
+                local_by_id[cid]["price_t"]    = rc.get("price_t", local_by_id[cid]["price_t"])
+                local_by_id[cid]["updated_ts"] = rc.get("updated_ts", "")
+                updated = True
+
         if updated:
             self.save_data()
             self.root.after(0, self._on_sync_update)
@@ -2320,19 +2369,23 @@ class DMWTeraTracker:
         gist_id = cfg.get("gist_id", "") or PRICES_GIST_ID
 
         # merge: pull remote first, keep newest entry per item
-        remote_hist = {}
+        remote_hist   = {}
+        remote_custom = []
         try:
             url     = f"https://api.github.com/gists/{gist_id}"
             headers_r = {"Accept": "application/vnd.github+json",
                          "Authorization": f"Bearer {token}"}
             req = urllib.request.Request(url, headers=headers_r)
             with urllib.request.urlopen(req, timeout=10) as r:
-                data    = json.loads(r.read().decode())
-                content = data["files"]["dmw_prices.json"]["content"]
-                remote_hist = json.loads(content).get("price_history", {})
+                data        = json.loads(r.read().decode())
+                raw         = data["files"]["dmw_prices.json"]["content"]
+                remote_data = json.loads(raw)
+                remote_hist   = remote_data.get("price_history", {})
+                remote_custom = remote_data.get("custom_items", [])
         except Exception:
             pass
 
+        # merge price history
         merged = dict(remote_hist)
         for name, entries in self.price_hist.items():
             if not entries:
@@ -2342,7 +2395,23 @@ class DMWTeraTracker:
             if local_latest.get("timestamp", "") > remote_latest.get("timestamp", ""):
                 merged.setdefault(name, []).append(local_latest)
 
-        content = json.dumps({"price_history": merged}, indent=2)
+        # merge custom items — latest updated_ts per id wins
+        custom_by_id = {rc["id"]: rc for rc in remote_custom if rc.get("id")}
+        for ci in self.custom_inv:
+            cid = ci.get("id")
+            if not cid:
+                continue
+            remote_ver = custom_by_id.get(cid)
+            if not remote_ver or ci.get("updated_ts", "") >= remote_ver.get("updated_ts", ""):
+                custom_by_id[cid] = {
+                    "id":         cid,
+                    "name":       ci["name"],
+                    "price_t":    ci.get("price_t", 0.0),
+                    "updated_ts": ci.get("updated_ts", ""),
+                }
+        merged_custom = list(custom_by_id.values())
+
+        content = json.dumps({"price_history": merged, "custom_items": merged_custom}, indent=2)
         payload = json.dumps({
             "description": "DMW Tera Tracker — shared prices",
             "public":      True,
