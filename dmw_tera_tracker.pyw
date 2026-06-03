@@ -207,10 +207,10 @@ PRICE_ITEMS = [
     {"name": "Metallic Beast Core",          "command": ".storeitem Metallic Beast Core"},
     {"name": "Cruelty Clown Core",           "command": ".storeitem Cruelty Clown Core"},
     {"name": "Core of Nothingness",          "command": ".storeitem Core of Nothingness"},
-    {"name": "MetalSeadramon's Spirit Box",  "command": ".storeitem MetalSeadramon's Spirit Box"},
-    {"name": "Puppetmon's Spirit Box",       "command": ".storeitem Puppetmon's Spirit Box"},
-    {"name": "MugenDramon's Spirit Box",     "command": ".storeitem MugenDramon's Spirit Box"},
-    {"name": "Piedmon's Spirit Box",         "command": ".storeitem Piedmon's Spirit Box"},
+    {"name": "MetalSeadramon's Spirit Box",  "command": ".storeitem MetalSeadramon's Spirit Box",  "group": "spirit_boxes"},
+    {"name": "Puppetmon's Spirit Box",       "command": ".storeitem Puppetmon's Spirit Box",       "group": "spirit_boxes"},
+    {"name": "MugenDramon's Spirit Box",     "command": ".storeitem MugenDramon's Spirit Box",     "group": "spirit_boxes"},
+    {"name": "Piedmon's Spirit Box",         "command": ".storeitem Piedmon's Spirit Box",          "group": "spirit_boxes"},
 ]
 
 # Items shown in Inventory tab (no spirit boxes — those are scanner-only)
@@ -693,46 +693,55 @@ class DMWTeraTracker:
                  bg=C["bg"], fg=C["text_muted"], pady=8).pack(anchor="w")
 
         self.item_rows = {}
-        _seal_cont    = [None]
-        _seal_open    = [False]
+
+        def _make_accordion(parent, group_key, label):
+            n    = sum(1 for x in PRICE_ITEMS if x.get("group") == group_key)
+            cont = [None]
+            open_ = [False]
+            hdr  = tk.Frame(parent, bg=C["bg2"],
+                            highlightbackground=C["border"],
+                            highlightthickness=1, cursor="hand2")
+            hdr.pack(fill=tk.X)
+            h_in = tk.Frame(hdr, bg=C["bg2"], pady=9, padx=26)
+            h_in.pack(fill=tk.X)
+            arr  = tk.Label(h_in, text="▶", font=("Segoe UI", 8),
+                            bg=C["bg2"], fg=C["text_dim"])
+            arr.pack(side=tk.LEFT, padx=(0, 8))
+            tk.Label(h_in, text=label,
+                     font=("Segoe UI", 9, "bold"),
+                     bg=C["bg2"], fg=C["cyan"]).pack(side=tk.LEFT)
+            tk.Label(h_in, text=f"   {n} items",
+                     font=("Segoe UI", 8),
+                     bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
+            frame = tk.Frame(parent, bg=C["bg"])
+            cont[0] = frame
+
+            def _toggle(e, c=frame, a=arr, flag=open_):
+                flag[0] = not flag[0]
+                if flag[0]:
+                    c.pack(fill=tk.X)
+                    a.config(text="▼")
+                else:
+                    c.pack_forget()
+                    a.config(text="▶")
+
+            for w in (hdr, h_in) + tuple(h_in.winfo_children()):
+                w.bind("<Button-1>", _toggle)
+            return cont
+
+        _seal_cont  = [None]
+        _box_cont   = [None]
 
         for item in PRICE_ITEMS:
-            if item.get("group") == "rbh_seals":
+            grp = item.get("group")
+            if grp == "rbh_seals":
                 if _seal_cont[0] is None:
-                    n = sum(1 for x in PRICE_ITEMS if x.get("group") == "rbh_seals")
-                    hdr = tk.Frame(p, bg=C["bg2"],
-                                   highlightbackground=C["border"],
-                                   highlightthickness=1, cursor="hand2")
-                    hdr.pack(fill=tk.X)
-                    h_in = tk.Frame(hdr, bg=C["bg2"], pady=9, padx=26)
-                    h_in.pack(fill=tk.X)
-                    arr = tk.Label(h_in, text="▶",
-                                   font=("Segoe UI", 8),
-                                   bg=C["bg2"], fg=C["text_dim"])
-                    arr.pack(side=tk.LEFT, padx=(0, 8))
-                    tk.Label(h_in, text="RBH  SEALS",
-                             font=("Segoe UI", 9, "bold"),
-                             bg=C["bg2"], fg=C["cyan"]).pack(side=tk.LEFT)
-                    tk.Label(h_in, text=f"   {n} items",
-                             font=("Segoe UI", 8),
-                             bg=C["bg2"], fg=C["text_dim"]).pack(side=tk.LEFT)
-
-                    cont = tk.Frame(p, bg=C["bg"])
-                    _seal_cont[0] = cont
-
-                    def _toggle(e, c=cont, a=arr, flag=_seal_open):
-                        flag[0] = not flag[0]
-                        if flag[0]:
-                            c.pack(fill=tk.X)
-                            a.config(text="▼")
-                        else:
-                            c.pack_forget()
-                            a.config(text="▶")
-
-                    for w in (hdr, h_in) + tuple(h_in.winfo_children()):
-                        w.bind("<Button-1>", _toggle)
-
+                    _seal_cont = _make_accordion(p, "rbh_seals", "RBH  SEALS")
                 self._build_queue_row(_seal_cont[0], item)
+            elif grp == "spirit_boxes":
+                if _box_cont[0] is None:
+                    _box_cont = _make_accordion(p, "spirit_boxes", "SPIRIT  BOXES")
+                self._build_queue_row(_box_cont[0], item)
             else:
                 self._build_queue_row(p, item)
 
