@@ -192,6 +192,13 @@ DUNGEONS = [
 PRICE_ITEMS = [
     {"name": "Yggdrasil Core",      "command": ".storeitem Yggdrasil Core"},
     {"name": "Yggdrasil's Records", "command": ".storeitem Yggdrasil's Records"},
+    # ── IMD 3.0 Seals ────────────────────────────────────────────────────────
+    {"name": "Beelzemon X Seal",                     "command": ".storeitem Beelzemon X Seal",                    "group": "imd3_seals"},
+    {"name": "Daemon X Seal",                        "command": ".storeitem Daemon X Seal",                       "group": "imd3_seals"},
+    {"name": "Barbamon X Seal",                      "command": ".storeitem Barbamon X Seal",                     "group": "imd3_seals"},
+    {"name": "Lilithmon X Seal",                     "command": ".storeitem Lilithmon X Seal",                    "group": "imd3_seals"},
+    {"name": "Belphemon (Shin) Seal",                "command": ".storeitem Belphemon (Shin) Seal",               "group": "imd3_seals"},
+    {"name": "Lucemon X Seal",                       "command": ".storeitem Lucemon X Seal",                      "group": "imd3_seals"},
     # ── RBH Seals (shown as collapsible group in scanner) ────────────────────
     {"name": "Alphamon Ouryuken Seal",               "command": ".storeitem Alphamon Ouryuken Seal",              "group": "rbh_seals"},
     {"name": "Alphamon Ouryuken (Awaken) Seal",      "command": ".storeitem Alphamon Ouryuken (Awaken) Seal",     "group": "rbh_seals"},
@@ -712,12 +719,17 @@ class DMWTeraTracker:
 
         self.item_rows = {}
 
+        _imd3_cont  = [None]
         _seal_cont  = [None]
         _box_cont   = [None]
 
         for item in PRICE_ITEMS:
             grp = item.get("group")
-            if grp == "rbh_seals":
+            if grp == "imd3_seals":
+                if _imd3_cont[0] is None:
+                    _imd3_cont = self._build_accordion(p, "imd3_seals", "IMD 3.0  SEALS")
+                self._build_queue_row(_imd3_cont[0], item)
+            elif grp == "rbh_seals":
                 if _seal_cont[0] is None:
                     _seal_cont = self._build_accordion(p, "rbh_seals", "RBH  SEALS")
                 self._build_queue_row(_seal_cont[0], item)
@@ -2024,9 +2036,15 @@ class DMWTeraTracker:
         self._inv_value_lbls = {}
         self._inv_vars       = {}
 
+        _inv_imd3_cont = [None]
         _inv_seal_cont = [None]
         for item in INV_ITEMS:
-            if item.get("group") == "rbh_seals":
+            grp = item.get("group")
+            if grp == "imd3_seals":
+                if _inv_imd3_cont[0] is None:
+                    _inv_imd3_cont = self._build_accordion(p, "imd3_seals", "IMD 3.0  SEALS")
+                self._build_inv_row(_inv_imd3_cont[0], item)
+            elif grp == "rbh_seals":
                 if _inv_seal_cont[0] is None:
                     _inv_seal_cont = self._build_accordion(p, "rbh_seals", "RBH  SEALS")
                 self._build_inv_row(_inv_seal_cont[0], item)
