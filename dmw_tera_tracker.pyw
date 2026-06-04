@@ -192,14 +192,7 @@ DUNGEONS = [
 PRICE_ITEMS = [
     {"name": "Yggdrasil Core",      "command": ".storeitem Yggdrasil Core"},
     {"name": "Yggdrasil's Records", "command": ".storeitem Yggdrasil's Records"},
-    # ── IMD 3.0 Seals ────────────────────────────────────────────────────────
-    {"name": "Beelzemon X Seal",                     "command": ".storeitem Beelzemon X Seal",                    "group": "imd3_seals"},
-    {"name": "Daemon X Seal",                        "command": ".storeitem Daemon X Seal",                       "group": "imd3_seals"},
-    {"name": "Barbamon X Seal",                      "command": ".storeitem Barbamon X Seal",                     "group": "imd3_seals"},
-    {"name": "Lilithmon X Seal",                     "command": ".storeitem Lilithmon X Seal",                    "group": "imd3_seals"},
-    {"name": "Belphemon (Shin) Seal",                "command": ".storeitem Belphemon (Shin) Seal",               "group": "imd3_seals"},
-    {"name": "Lucemon X Seal",                       "command": ".storeitem Lucemon X Seal",                      "group": "imd3_seals"},
-    # ── RBH Seals (shown as collapsible group in scanner) ────────────────────
+    # ── RBH Seals ────────────────────────────────────────────────────────────
     {"name": "Alphamon Ouryuken Seal",               "command": ".storeitem Alphamon Ouryuken Seal",              "group": "rbh_seals"},
     {"name": "Alphamon Ouryuken (Awaken) Seal",      "command": ".storeitem Alphamon Ouryuken (Awaken) Seal",     "group": "rbh_seals"},
     {"name": "Alphamon Ouryuken X Seal",             "command": ".storeitem Alphamon Ouryuken X Seal",            "group": "rbh_seals"},
@@ -218,6 +211,13 @@ PRICE_ITEMS = [
     {"name": "Puppetmon's Spirit Box",       "command": ".storeitem Puppetmon's Spirit Box",       "group": "spirit_boxes"},
     {"name": "MugenDramon's Spirit Box",     "command": ".storeitem MugenDramon's Spirit Box",     "group": "spirit_boxes"},
     {"name": "Piedmon's Spirit Box",         "command": ".storeitem Piedmon's Spirit Box",          "group": "spirit_boxes"},
+    # ── IMD 3.0 Seals ────────────────────────────────────────────────────────
+    {"name": "Beelzemon X Seal",             "command": ".storeitem Beelzemon X Seal",              "group": "imd3_seals"},
+    {"name": "Daemon X Seal",               "command": ".storeitem Daemon X Seal",                 "group": "imd3_seals"},
+    {"name": "Barbamon X Seal",             "command": ".storeitem Barbamon X Seal",               "group": "imd3_seals"},
+    {"name": "Lilithmon X Seal",            "command": ".storeitem Lilithmon X Seal",              "group": "imd3_seals"},
+    {"name": "Belphemon (Shin) Seal",       "command": ".storeitem Belphemon (Shin) Seal",         "group": "imd3_seals"},
+    {"name": "Lucemon X Seal",              "command": ".storeitem Lucemon X Seal",                "group": "imd3_seals"},
 ]
 
 # Items shown in Inventory tab (no spirit boxes — those are scanner-only)
@@ -780,8 +780,20 @@ class DMWTeraTracker:
                 c.pack_forget()
                 a.config(text="▶")
 
+        def _expand(c=frame, a=arr, flag=open_):
+            if not flag[0]:
+                flag[0] = True
+                c.pack(fill=tk.X)
+                a.config(text="▼")
+
         for w in (hdr, h_in) + tuple(h_in.winfo_children()):
             w.bind("<Button-1>", _toggle)
+
+        # store expand fn so scanner can auto-open when it reaches this group
+        if not hasattr(self, "_accordion_openers"):
+            self._accordion_openers = {}
+        self._accordion_openers[group_key] = _expand
+
         return cont
 
     def _build_queue_row(self, parent, item):
@@ -909,6 +921,10 @@ class DMWTeraTracker:
             self.cur_name.config(text=item["name"])
             self.cur_cmd.config(text=item["command"])
             self.prog_label.config(text=f"{self.scan_idx + 1}  /  {n}")
+            # auto-expand accordion if this item is inside one
+            grp = item.get("group")
+            if grp and hasattr(self, "_accordion_openers") and grp in self._accordion_openers:
+                self._accordion_openers[grp]()
         else:
             self.cur_name.config(text="✓  Complete")
             self.cur_cmd.config(text="All selected prices updated")
