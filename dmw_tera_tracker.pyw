@@ -192,6 +192,16 @@ DUNGEONS = [
 PRICE_ITEMS = [
     {"name": "Yggdrasil Core",      "command": ".storeitem Yggdrasil Core"},
     {"name": "Yggdrasil's Records", "command": ".storeitem Yggdrasil's Records"},
+    # ── RBH Seals ────────────────────────────────────────────────────────────
+    {"name": "Alphamon Ouryuken Seal",               "command": ".storeitem Alphamon Ouryuken Seal",              "group": "rbh_seals"},
+    {"name": "Alphamon Ouryuken (Awaken) Seal",      "command": ".storeitem Alphamon Ouryuken (Awaken) Seal",     "group": "rbh_seals"},
+    {"name": "Alphamon Ouryuken X Seal",             "command": ".storeitem Alphamon Ouryuken X Seal",            "group": "rbh_seals"},
+    {"name": "Mastemon Seal",                        "command": ".storeitem Mastemon Seal",                       "group": "rbh_seals"},
+    {"name": "Omegamon X Seal",                      "command": ".storeitem Omegamon X Seal",                     "group": "rbh_seals"},
+    {"name": "Chaosmon Seal",                        "command": ".storeitem Chaosmon Seal",                       "group": "rbh_seals"},
+    {"name": "ImperialDramon Fighter Mode Seal",     "command": ".storeitem ImperialDramon Fighter Mode Seal",    "group": "rbh_seals"},
+    {"name": "ShoutmonX2 Seal",                      "command": ".storeitem ShoutmonX2 Seal",                     "group": "rbh_seals"},
+    # ─────────────────────────────────────────────────────────────────────────
     {"name": "Marine Dragon Core",  "command": ".storeitem Marine Dragon Core"},
     {"name": "Wooden Puppet Core",  "command": ".storeitem Wooden Puppet Core"},
     {"name": "Metallic Beast Core",          "command": ".storeitem Metallic Beast Core"},
@@ -702,10 +712,16 @@ class DMWTeraTracker:
 
         self.item_rows = {}
 
-        _box_cont = [None]
+        _seal_cont = [None]
+        _box_cont  = [None]
 
         for item in PRICE_ITEMS:
-            if item.get("group") == "spirit_boxes":
+            grp = item.get("group")
+            if grp == "rbh_seals":
+                if _seal_cont[0] is None:
+                    _seal_cont = self._build_accordion(p, "rbh_seals", "RBH  SEALS")
+                self._build_queue_row(_seal_cont[0], item)
+            elif grp == "spirit_boxes":
                 if _box_cont[0] is None:
                     _box_cont = self._build_accordion(p, "spirit_boxes", "SPIRIT  BOXES")
                 self._build_queue_row(_box_cont[0], item)
@@ -2024,8 +2040,14 @@ class DMWTeraTracker:
         self._inv_value_lbls = {}
         self._inv_vars       = {}
 
+        _inv_seal_cont = [None]
         for item in INV_ITEMS:
-            self._build_inv_row(p, item)
+            if item.get("group") == "rbh_seals":
+                if _inv_seal_cont[0] is None:
+                    _inv_seal_cont = self._build_accordion(p, "rbh_seals", "RBH  SEALS")
+                self._build_inv_row(_inv_seal_cont[0], item)
+            else:
+                self._build_inv_row(p, item)
 
         # ── Custom items section ──────────────────────────────────────────────
         tk.Frame(p, bg=C["border"], height=1).pack(fill=tk.X)
