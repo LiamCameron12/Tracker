@@ -211,6 +211,13 @@ PRICE_ITEMS = [
     {"name": "Puppetmon's Spirit Box",       "command": ".storeitem Puppetmon's Spirit Box",       "group": "spirit_boxes"},
     {"name": "MugenDramon's Spirit Box",     "command": ".storeitem MugenDramon's Spirit Box",     "group": "spirit_boxes"},
     {"name": "Piedmon's Spirit Box",         "command": ".storeitem Piedmon's Spirit Box",          "group": "spirit_boxes"},
+    # ── IMD 3.0 Seals ────────────────────────────────────────────────────────
+    {"name": "Beelzebumon X Seal",           "command": ".storeitem Beelzebumon X Seal",            "group": "imd3_seals"},
+    {"name": "Daemon X Seal",                "command": ".storeitem Daemon X Seal",                 "group": "imd3_seals"},
+    {"name": "Barbamon X Seal",              "command": ".storeitem Barbamon X Seal",               "group": "imd3_seals"},
+    {"name": "Lilithmon X Seal",             "command": ".storeitem Lilithmon X Seal",              "group": "imd3_seals"},
+    {"name": "Belphemon RM (Shin) Seal",     "command": ".storeitem Belphemon RM (Shin) Seal",      "group": "imd3_seals"},
+    {"name": "Leviamon X Seal",              "command": ".storeitem Leviamon X Seal",               "group": "imd3_seals"},
 ]
 
 # Items shown in Inventory tab (no spirit boxes — those are scanner-only)
@@ -714,6 +721,7 @@ class DMWTeraTracker:
 
         _seal_cont = [None]
         _box_cont  = [None]
+        _imd3_cont = [None]
 
         for item in PRICE_ITEMS:
             grp = item.get("group")
@@ -725,6 +733,10 @@ class DMWTeraTracker:
                 if _box_cont[0] is None:
                     _box_cont = self._build_accordion(p, "spirit_boxes", "SPIRIT  BOXES")
                 self._build_queue_row(_box_cont[0], item)
+            elif grp == "imd3_seals":
+                if _imd3_cont[0] is None:
+                    _imd3_cont = self._build_accordion(p, "imd3_seals", "IMD 3.0")
+                self._build_queue_row(_imd3_cont[0], item)
             else:
                 self._build_queue_row(p, item)
 
@@ -2041,11 +2053,17 @@ class DMWTeraTracker:
         self._inv_vars       = {}
 
         _inv_seal_cont = [None]
+        _inv_imd3_cont = [None]
         for item in INV_ITEMS:
-            if item.get("group") == "rbh_seals":
+            grp = item.get("group")
+            if grp == "rbh_seals":
                 if _inv_seal_cont[0] is None:
                     _inv_seal_cont = self._build_accordion(p, "rbh_seals", "RBH  SEALS")
                 self._build_inv_row(_inv_seal_cont[0], item)
+            elif grp == "imd3_seals":
+                if _inv_imd3_cont[0] is None:
+                    _inv_imd3_cont = self._build_accordion(p, "imd3_seals", "IMD 3.0")
+                self._build_inv_row(_inv_imd3_cont[0], item)
             else:
                 self._build_inv_row(p, item)
 
