@@ -1651,7 +1651,7 @@ class DMWTeraTracker:
                          font=("Segoe UI", 9),
                          bg=C["bg"], fg=C["text_muted"], pady=9).pack(anchor="w")
             else:
-                for entry in reversed(history[-12:]):
+                for entry in reversed(history[-3:]):
                     ts      = entry.get("timestamp", "")[:16].replace("T", "   ")
                     price   = entry.get("price", 0)
                     scanner = entry.get("hwid", "")
