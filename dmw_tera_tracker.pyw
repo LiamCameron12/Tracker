@@ -212,12 +212,13 @@ PRICE_ITEMS = [
     {"name": "MugenDramon's Spirit Box",     "command": ".storeitem MugenDramon's Spirit Box",     "group": "spirit_boxes"},
     {"name": "Piedmon's Spirit Box",         "command": ".storeitem Piedmon's Spirit Box",          "group": "spirit_boxes"},
     # ── IMD 3.0 Seals ────────────────────────────────────────────────────────
-    {"name": "Beelzebumon X Seal",           "command": ".storeitem Beelzebumon X Seal",            "group": "imd3_seals"},
-    {"name": "Daemon X Seal",                "command": ".storeitem Daemon X Seal",                 "group": "imd3_seals"},
-    {"name": "Barbamon X Seal",              "command": ".storeitem Barbamon X Seal",               "group": "imd3_seals"},
-    {"name": "Lilithmon X Seal",             "command": ".storeitem Lilithmon X Seal",              "group": "imd3_seals"},
-    {"name": "Belphemon RM (Shin) Seal",     "command": ".storeitem Belphemon RM (Shin) Seal",      "group": "imd3_seals"},
-    {"name": "Leviamon X Seal",              "command": ".storeitem Leviamon X Seal",               "group": "imd3_seals"},
+    {"name": "Beelzemon X Seal",             "command": ".s beelzemon x",                           "group": "imd3_seals"},
+    {"name": "Daemon X Seal",                "command": ".s daemon",                                "group": "imd3_seals"},
+    {"name": "Barbamon X Seal",              "command": ".s barbamon",                              "group": "imd3_seals"},
+    {"name": "Lilithmon X Seal",             "command": ".s lilithmon x",                           "group": "imd3_seals"},
+    {"name": "Belphemon (Shin) Seal",        "command": ".s belphemon",                             "group": "imd3_seals"},
+    {"name": "Leviamon X Seal",              "command": ".s leviamon x",                            "group": "imd3_seals"},
+    {"name": "Lucemon X Seal",               "command": ".s lucemon x",                             "group": "imd3_seals"},
 ]
 
 # Items shown in Inventory tab (no spirit boxes — those are scanner-only)
